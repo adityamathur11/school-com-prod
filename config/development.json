@@ -1,0 +1,5 @@
+{
+  "db" : "mongodb://localhost:27017/school-com-task",
+  "auth_secret" : "gCADQ0cRxA0QyKkPeORuwGLMSvIQ02i6",
+  "tokenExpireTime" : 31104000
+}
