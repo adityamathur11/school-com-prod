@@ -11,16 +11,15 @@ var Response = require('../responses/response');
 
 router.post('/login',function (req, res) {
     if(req.body.email !== undefined && req.body.password !== undefined){
-        User.findOne({email: req.body.email}, function (err, user) {
+        User.findOne({email: req.body.email}, '+password', function (err, user) {
             if(user){
                 bcrypt.compare(req.body.password, user.password, function (err, result) {
                     if(err){
                         res.status(Response.InternalServerError.code);
                         res.json(Response.InternalServerError.message)
-                    }
-                    if(result === true){
+                    } else if(result === true){
                         var token = jwt.sign({id : user._id}, config.auth_secret ,{expiresIn: config.tokenExpireTime});
-                        res.json({token: 'JWT ' + token });
+                        res.json({token: 'JWT ' + token , message : Response.Success.message.message});
                     } else {
                         res.status(Response.InvalidCredentials.code);
                         res.json(Response.InvalidCredentials.message);
@@ -45,7 +44,7 @@ router.post('/register',function (req, res) {
             res.status(Response.ResourceConflict.code);
             res.json(Response.ResourceConflict.code)
         } else{
-            var newUser = new User(util.getPostObject(model, req.body));
+            var newUser = new User(req.body);
             newUser.save(function (err , user) {
                 if(err) {
                     res.status(Response.InternalServerError.code);

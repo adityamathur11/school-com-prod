@@ -6,10 +6,13 @@ var express = require('express')
     ,config = require('config')
     ,bodyParser = require('body-parser')
     ,passport = require('passport')
-    ,morgan = require('morgan');
+    ,morgan = require('morgan')
+    ,cors = require('cors');
+var Response = require('./api/responses/response');
 
 var app = express();
 
+app.use(cors());
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 app.use(morgan('dev'));
@@ -17,12 +20,13 @@ app.use(morgan('dev'));
 var privateUserAPIs = require('./api/controllers/User.controller');
 var privateTaskAPIs = require('./api/controllers/balance.controller');
 var publicAPIs = require('./api/controllers/public.controller');
-var Response = require('./api/responses/response');
+
+var privateRouter = express.Router();
+privateRouter.use('/private', privateUserAPIs);
+privateRouter.use('/private', privateTaskAPIs);
 
 app.use(passport.initialize());
 require('./api/authentication/passport')(passport);
-
-app.use('/API',publicAPIs);
 
 app.use('/API/private', function (req, res, next) {
     if(req.header("Authorization")){
@@ -44,32 +48,21 @@ app.use('/API', function (req, res, next) {
             res.json(Response.InternalServerError.message);
         }
         else if (!user) {
-            res.status(Response.InvalidTokenn.code);
-            res.json(info);
+            res.status(Response.InvalidToken.code);
+            res.json(Response.InvalidToken.message);
         } else{
             req.user = user;
             next();
         }
     })(req, res, next);
-},privateUserAPIs);
-app.use('/API', function (req, res, next) {
-    passport.authenticate('jwt', {session : false}, function(err, user, info) {
-        if (err) {
-            res.status(Response.InternalServerError.code);
-            res.json(Response.InternalServerError.message);
-        }
-        else if (!user) {
-            res.status(Response.InvalidTokenn.code);
-            res.json(info);
-        } else{
-            req.user = user;
-            next();
-        }
-    })(req, res, next);
-},privateTaskAPIs);
+},privateRouter);
+
+app.use('/',publicAPIs);
 
 var PORT = process.env.PORT || 3000;
+
 connectDB();
+
 mongoose.connection.once('connected', function () {
     app.listen(PORT, function () {
         console.log('Server is running. \nGo to localhost:'+PORT+".");
@@ -77,19 +70,35 @@ mongoose.connection.once('connected', function () {
 });
 
 mongoose.connection.on('error',function (err) {
-    console.log('Mongoose default connection error: ' + err);
+    console.log('Mongoose connection error: ' + err);
 });
 
 mongoose.connection.on('disconnected', function () {
-    console.log('Mongoose default connection disconnected');
+    console.log('Mongoose connection disconnected');
 });
 
 process.on('SIGINT', function() {
     mongoose.connection.close(function () {
-        console.log('Mongoose default connection disconnected through app termination');
+        console.log('Closing Mongoose connection');
         process.exit(0);
     });
 });
+
+
+var args = process.argv;
+if(args[args.length-4] === 'INIT_ADMIN'){
+    var User = require("./api/models/User");
+
+    var newAdmin = new User({
+        email : args[args.length-3],
+        username :  args[args.length-2],
+        password: args[args.length-1]
+    });
+    newAdmin.saveAsAdmin(function(){
+        console.log("admin account for user " + args[args.length-2]+" has been created");
+        process.exit();
+    })
+}
 
 function connectDB() {
     const options = {

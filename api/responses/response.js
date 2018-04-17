@@ -20,7 +20,7 @@ var ResponseCodes = {
             message : "Authorization Token Required"
         }
     },
-    InvalidTokenn : {
+    InvalidToken : {
         code : 401,
         message :{
             message : "Invalid Authorization Token"
@@ -65,6 +65,12 @@ var ResponseCodes = {
     },
     Deleted : {
         code : 204
+    },
+    Forbidden : {
+        code : 403,
+        message : {
+            message : "Forbidden Access"
+        }
     }
 };
 

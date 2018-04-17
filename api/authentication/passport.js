@@ -13,8 +13,6 @@ var opts = {};
 opts.jwtFromRequest = ExtractJwt.fromAuthHeaderWithScheme('jwt');
 opts.secretOrKey = config.auth_secret;
 
-// TODO : Cross check auth
-
 module.exports = function(passport) {
     passport.use(new JwtStrategy(opts, function(jwt_payload, done) {
 

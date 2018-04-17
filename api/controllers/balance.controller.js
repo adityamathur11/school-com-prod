@@ -31,10 +31,22 @@ var isBalanced = function(str) {
 
 
 route.post('/balanced', function (req, res) {
-    // TODO : implement increment and change messages
-    if(isBalanced(req.body.input)){
-        res.json(Response.Success.message);
-    } else{
-        res.json({messgae : "fail"});
-    }
+    User.findByIdAndUpdate(req.user._id, {$inc : {attempts : 1}}, function (err, user) {
+        if(err){
+            res.status(Response.InternalServerError.code)
+            res.json(Response.InternalServerError.message);
+        } else if(user){
+            if(isBalanced(req.body.input)){
+                res.json({message : Response.Success.message.message, username : req.user.username, attempts : req.user.attempts});
+            } else{
+                res.json({username : req.user.username, attempts : req.user.attempts});
+            }
+        } else{
+            res.status(Response.InternalServerError.code)
+            res.json(Response.InternalServerError.message);
+        }
+    });
+
 });
+
+module.exports = route;
